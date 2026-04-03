@@ -35,29 +35,27 @@ function NodeBox({
         {isBird ? (
           <>
             <p className="font-heading font-semibold text-foreground leading-tight">
-              {(node as TreeNode).bird.nome}
+              {node.bird.nome}
             </p>
             <p
               className="text-muted-foreground"
               style={{ fontSize: `${scale * 0.75}rem` }}
             >
-              {(node as TreeNode).bird.anilha}
+              {node.bird.anilha}
             </p>
           </>
         ) : (
-          <p className="text-muted-foreground italic">
-            {(node as { label: string }).label}
-          </p>
+          <p className="text-muted-foreground italic">{node.label}</p>
         )}
       </div>
 
-      {isBird && (((node as TreeNode).pai) || ((node as TreeNode).mae)) && (
+      {isBird && (node.pai || node.mae) && (
         <div className="flex gap-4 mt-1">
           <div className="flex flex-col items-center">
             <span className="text-[10px] text-muted-foreground mb-0.5">Pai</span>
             <div className="w-px h-3 bg-border" />
-            {(node as TreeNode).pai ? (
-              <NodeBox node={(node as TreeNode).pai!} level={level + 1} />
+            {node.pai ? (
+              <NodeBox node={node.pai} level={level + 1} />
             ) : (
               <div className="px-2 py-1 rounded bg-muted text-muted-foreground text-xs italic">
                 Desconhecido
@@ -68,8 +66,8 @@ function NodeBox({
           <div className="flex flex-col items-center">
             <span className="text-[10px] text-muted-foreground mb-0.5">Mãe</span>
             <div className="w-px h-3 bg-border" />
-            {(node as TreeNode).mae ? (
-              <NodeBox node={(node as TreeNode).mae!} level={level + 1} />
+            {node.mae ? (
+              <NodeBox node={node.mae} level={level + 1} />
             ) : (
               <div className="px-2 py-1 rounded bg-muted text-muted-foreground text-xs italic">
                 Desconhecida
