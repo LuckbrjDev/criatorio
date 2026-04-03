@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Passaro, PassaroFormData, Vacina } from "@/types/Passaro";
 import { passaroService } from "@/services/passaroService";
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { CalendarIcon, Plus, Trash2, Upload, X, Save, Bird } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, Upload, X, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Field = ({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) => (
@@ -48,7 +47,16 @@ const emptyForm: PassaroFormData = {
 export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
   const [form, setForm] = useState<PassaroFormData>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const allBirds = passaroService.getAll();
+  const [allBirds, setAllBirds] = useState<Passaro[]>([]);
+
+  useEffect(() => {
+    const loadBirds = async () => {
+      const data = await passaroService.getAll();
+      setAllBirds(Array.isArray(data) ? data : []);
+    };
+
+    loadBirds();
+  }, []);
 
   useEffect(() => {
     if (editingBird) {
@@ -81,20 +89,12 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
 
     if (editingBird) {
-      const changes: string[] = [];
-      if (editingBird.nome !== form.nome) changes.push("nome");
-      if (editingBird.cor !== form.cor) changes.push("cor");
-      if (editingBird.alimentacao !== form.alimentacao) changes.push("alimentação");
-      
-      const result = passaroService.update(
-        editingBird.anilha,
-        form,
-        changes.length > 0 ? `Campos alterados: ${changes.join(", ")}` : "Dados atualizados."
-      );
+      const result = await passaroService.update(editingBird.anilha, form);
+
       if (result.success) {
         toast.success("Pássaro atualizado com sucesso!");
         onSave();
@@ -102,7 +102,8 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
         toast.error(result.error);
       }
     } else {
-      const result = passaroService.create(form);
+      const result = await passaroService.create(form);
+
       if (result.success) {
         toast.success("Pássaro cadastrado com sucesso!");
         setForm(emptyForm);
@@ -116,9 +117,10 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!editingBird) return;
-    passaroService.remove(editingBird.anilha);
+
+    await passaroService.remove(editingBird.anilha);
     toast.success("Pássaro excluído.");
     setForm(emptyForm);
     onSave();
@@ -134,15 +136,18 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "audio") => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result = ev.target?.result as string;
+
       if (type === "image") {
         setForm((f) => ({ ...f, imagens: [...f.imagens, result] }));
       } else {
         setForm((f) => ({ ...f, audio: result }));
       }
     };
+
     reader.readAsDataURL(file);
   };
 
@@ -151,7 +156,10 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
   };
 
   const addVacina = () => {
-    setForm((f) => ({ ...f, vacinas: [...f.vacinas, { nome: "", data: new Date().toISOString() }] }));
+    setForm((f) => ({
+      ...f,
+      vacinas: [...f.vacinas, { nome: "", data: new Date().toISOString() }],
+    }));
   };
 
   const updateVacina = (index: number, field: keyof Vacina, value: string) => {
@@ -166,7 +174,6 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
   };
 
   return (
-
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-5 pr-4 pb-6">
         <div className="flex items-center justify-between">
@@ -180,7 +187,11 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Nome *" error={errors.nome}>
-            <Input value={form.nome} onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))} placeholder="Nome do pássaro" />
+            <Input
+              value={form.nome}
+              onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+              placeholder="Nome do pássaro"
+            />
           </Field>
 
           <Field label="Tipo *" error={errors.tipo}>
@@ -203,7 +214,11 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
           </Field>
 
           <Field label="Cor">
-            <Input value={form.cor} onChange={(e) => setForm((f) => ({ ...f, cor: e.target.value }))} placeholder="Ex: Amarelo" />
+            <Input
+              value={form.cor}
+              onChange={(e) => setForm((f) => ({ ...f, cor: e.target.value }))}
+              placeholder="Ex: Amarelo"
+            />
           </Field>
 
           <Field label="Pai">
@@ -212,7 +227,9 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
               <SelectContent>
                 <SelectItem value=" ">Nenhum</SelectItem>
                 {allBirds.filter((b) => b.anilha !== form.anilha).map((b) => (
-                  <SelectItem key={b.anilha} value={b.anilha}>{b.nome} ({b.anilha})</SelectItem>
+                  <SelectItem key={b.anilha} value={b.anilha}>
+                    {b.nome} ({b.anilha})
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -230,7 +247,9 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
               <SelectContent>
                 <SelectItem value=" ">Nenhuma</SelectItem>
                 {allBirds.filter((b) => b.anilha !== form.anilha).map((b) => (
-                  <SelectItem key={b.anilha} value={b.anilha}>{b.nome} ({b.anilha})</SelectItem>
+                  <SelectItem key={b.anilha} value={b.anilha}>
+                    {b.nome} ({b.anilha})
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -246,7 +265,10 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
         <Field label="Data de Nascimento">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !form.dataNascimento && "text-muted-foreground")}>
+              <Button
+                variant="outline"
+                className={cn("w-full justify-start text-left font-normal", !form.dataNascimento && "text-muted-foreground")}
+              >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {form.dataNascimento ? format(new Date(form.dataNascimento), "dd/MM/yyyy") : "Selecione a data"}
               </Button>
@@ -264,12 +286,14 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
           </Popover>
         </Field>
 
-        {/* Vacinas */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-sm font-medium">Vacinas</Label>
-            <Button variant="outline" size="sm" onClick={addVacina}><Plus className="w-3 h-3 mr-1" /> Adicionar</Button>
+            <Button variant="outline" size="sm" onClick={addVacina}>
+              <Plus className="w-3 h-3 mr-1" /> Adicionar
+            </Button>
           </div>
+
           {form.vacinas.map((v, i) => (
             <div key={i} className="flex items-center gap-2">
               <Input
@@ -292,21 +316,33 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
         </div>
 
         <Field label="Alimentação">
-          <Textarea value={form.alimentacao} onChange={(e) => setForm((f) => ({ ...f, alimentacao: e.target.value }))} placeholder="Descreva a alimentação..." rows={3} />
+          <Textarea
+            value={form.alimentacao}
+            onChange={(e) => setForm((f) => ({ ...f, alimentacao: e.target.value }))}
+            placeholder="Descreva a alimentação..."
+            rows={3}
+          />
         </Field>
 
         <Field label="Observações">
-          <Textarea value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} placeholder="Observações adicionais..." rows={3} />
+          <Textarea
+            value={form.observacoes}
+            onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))}
+            placeholder="Observações adicionais..."
+            rows={3}
+          />
         </Field>
 
-        {/* Images */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Imagens</Label>
           <div className="flex flex-wrap gap-2">
             {form.imagens.map((img, i) => (
               <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border">
                 <img src={img} alt="" className="w-full h-full object-cover" />
-                <button onClick={() => removeImage(i)} className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute top-0.5 right-0.5 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                >
                   <X className="w-3 h-3" />
                 </button>
               </div>
@@ -318,7 +354,6 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
           </div>
         </div>
 
-        {/* Audio */}
         <div className="space-y-2">
           <Label className="text-sm font-medium">Áudio (canto)</Label>
           {form.audio ? (
@@ -337,11 +372,11 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-2 pt-2">
           <Button onClick={handleSave} className="flex-1">
             <Save className="w-4 h-4 mr-1" /> Salvar
           </Button>
+
           {editingBird && (
             <AlertDialog>
               <AlertDialogTrigger asChild>

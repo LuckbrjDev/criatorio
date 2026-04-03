@@ -26,26 +26,31 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filters, setFilters] = useState<Filters>({ tipo: "", cor: "", anoNascimento: "" });
 
-  // 🔥 CORREÇÃO: controlar lista via estado
   useEffect(() => {
-    setBirdsList(passaroService.getAll());
+    const loadBirds = async () => {
+      const data = await passaroService.getAll();
+      setBirdsList(Array.isArray(data) ? data : []);
+    };
+
+    loadBirds();
   }, [passaros]);
 
-  // 🔥 CORREÇÃO: usar passaros ao invés de getAll direto
   const cores = useMemo(() => {
-    return [...new Set(passaros.map((p) => p.cor).filter(Boolean))];
+    return [...new Set((Array.isArray(passaros) ? passaros : []).map((p) => p.cor).filter(Boolean))];
   }, [passaros]);
 
   const filteredPassaros = useMemo(() => {
-    return passaros.filter((p) => {
+    return (Array.isArray(passaros) ? passaros : []).filter((p) => {
       if (filters.tipo && p.tipo !== filters.tipo) return false;
       if (filters.cor && p.cor !== filters.cor) return false;
+
       if (filters.anoNascimento && p.dataNascimento) {
         const ano = new Date(p.dataNascimento).getFullYear().toString();
         if (ano !== filters.anoNascimento) return false;
       } else if (filters.anoNascimento && !p.dataNascimento) {
         return false;
       }
+
       return true;
     });
   }, [passaros, filters]);
@@ -56,7 +61,7 @@ const Index = () => {
   };
 
   const handleAlertClick = (id: string) => {
-    const p = passaroService.getById(id);
+    const p = birdsList.find((bird) => bird.id === id || bird.anilha === id);
     if (p) handleCardClick(p);
   };
 
@@ -70,13 +75,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="relative h-36 md:h-44 overflow-hidden">
-        <img src={heroBirds} alt="Criadouro" className="w-full h-full object-cover" width={1920} height={512} />
+        <img
+          src={heroBirds}
+          alt="Criadouro"
+          className="w-full h-full object-cover"
+          width={1920}
+          height={512}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-foreground/40 to-foreground/70 flex items-center justify-center">
           <div className="text-center">
             <h1 className="font-heading text-2xl md:text-3xl font-bold text-primary-foreground drop-shadow-lg flex items-center gap-2 justify-center">
-              <Bird className="w-7 h-7" /> Criadouro Manager
+              <Bird className="w-7 h-7" /> Criatorio Berbel
             </h1>
-            <p className="text-primary-foreground/80 text-sm mt-1">Sistema de Gerenciamento de Pássaros</p>
+            <p className="text-primary-foreground/80 text-sm mt-1">
+              Sistema de Gerenciamento de Pássaros
+            </p>
           </div>
         </div>
       </header>
@@ -85,9 +98,14 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <TabsList className="bg-card shadow-sm">
-              <TabsTrigger value="dashboard" className="gap-1.5"><Bird className="w-4 h-4" /> Dashboard</TabsTrigger>
-              <TabsTrigger value="cadastro" className="gap-1.5"><ClipboardList className="w-4 h-4" /> Cadastro</TabsTrigger>
+              <TabsTrigger value="dashboard" className="gap-1.5">
+                <Bird className="w-4 h-4" /> Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="cadastro" className="gap-1.5">
+                <ClipboardList className="w-4 h-4" /> Cadastro
+              </TabsTrigger>
             </TabsList>
+
             <div className="flex gap-2 flex-wrap">
               <PdfReport passaros={filteredPassaros} />
               <BackupRestore onRestore={refresh} />
@@ -107,7 +125,9 @@ const Index = () => {
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <SearchBar value={searchQuery} onChange={buscar} />
-              <span className="text-sm text-muted-foreground">{filteredPassaros.length} pássaro(s)</span>
+              <span className="text-sm text-muted-foreground">
+                {filteredPassaros.length} pássaro(s)
+              </span>
             </div>
 
             <AdvancedFilters filters={filters} onChange={setFilters} cores={cores} />
@@ -116,12 +136,14 @@ const Index = () => {
               <div className="text-center py-16 text-muted-foreground">
                 <Bird className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p className="text-lg font-heading">Nenhum pássaro encontrado</p>
-                <p className="text-sm">Tente ajustar os filtros ou adicione pássaros na aba Cadastro.</p>
+                <p className="text-sm">
+                  Tente ajustar os filtros ou adicione pássaros na aba Cadastro.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredPassaros.map((p) => (
-                  <BirdCard key={p.id} passaro={p} onClick={handleCardClick} />
+                  <BirdCard key={p.id ?? p.anilha} passaro={p} onClick={handleCardClick} />
                 ))}
               </div>
             )}
@@ -141,20 +163,21 @@ const Index = () => {
                 </h3>
 
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                  {birdsList.map((p) => (
-                    <div
-                      key={p.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted ${
-                        editingBird?.id === p.id ? "border-primary bg-primary/5" : ""
-                      }`}
-                      onClick={() => setEditingBird(p)}
-                    >
-                      <p className="font-medium text-sm">{p.nome}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {p.tipo} • {p.anilha}
-                      </p>
-                    </div>
-                  ))}
+                  {Array.isArray(birdsList) &&
+                    birdsList.map((p) => (
+                      <div
+                        key={p.id ?? p.anilha}
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted ${
+                          editingBird?.id === p.id ? "border-primary bg-primary/5" : ""
+                        }`}
+                        onClick={() => setEditingBird(p)}
+                      >
+                        <p className="font-medium text-sm">{p.nome}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {p.tipo} • {p.anilha}
+                        </p>
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
@@ -162,7 +185,11 @@ const Index = () => {
         </Tabs>
       </main>
 
-      <BirdDetailModal passaro={selectedBird} open={detailOpen} onClose={() => setDetailOpen(false)} />
+      <BirdDetailModal
+        passaro={selectedBird}
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+      />
     </div>
   );
 };

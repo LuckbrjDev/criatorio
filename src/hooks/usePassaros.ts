@@ -1,22 +1,44 @@
-import { useState, useCallback } from "react";
-import { Passaro } from "@/types/Passaro";
+import { useEffect, useState } from "react";
 import { passaroService } from "@/services/passaroService";
 
 export function usePassaros() {
-  const [passaros, setPassaros] = useState<Passaro[]>(passaroService.getAll());
+  const [passaros, setPassaros] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [stats, setStats] = useState({
+    total: 0,
+    porTipo: {}
+  });
+  const [alertas, setAlertas] = useState<any[]>([]);
 
-  const refresh = useCallback(() => {
-    setPassaros(searchQuery ? passaroService.search(searchQuery) : passaroService.getAll());
-  }, [searchQuery]);
+  const refresh = async () => {
+    const data = await passaroService.getAll();
+    setPassaros(data || []);
 
-  const buscar = useCallback((query: string) => {
-    setSearchQuery(query);
-    setPassaros(query ? passaroService.search(query) : passaroService.getAll());
+    const statsData = await passaroService.getStats();
+    setStats(statsData);
+
+    const alertasData = await passaroService.getAlertas();
+    setAlertas(alertasData);
+  };
+
+  useEffect(() => {
+    refresh();
   }, []);
 
-  const stats = passaroService.getStats();
-  const alertas = passaroService.getAlertas();
+  const buscar = (query: string) => {
+    setSearchQuery(query);
+  };
 
-  return { passaros, refresh, buscar, searchQuery, stats, alertas };
+  const filtrados = passaros.filter((p) =>
+    p.nome?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return {
+    passaros: filtrados,
+    refresh,
+    buscar,
+    searchQuery,
+    stats,
+    alertas,
+  };
 }
