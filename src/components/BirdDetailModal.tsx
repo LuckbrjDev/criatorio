@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Bird, Calendar, Utensils, Syringe, FileText, GitBranch, Clock, ChevronLeft, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { Bird, Calendar, Utensils, Syringe, FileText, GitBranch, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface BirdDetailModalProps {
   passaro: Passaro | null;
@@ -19,12 +19,21 @@ interface BirdDetailModalProps {
 export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps) {
   const [imgIndex, setImgIndex] = useState(0);
 
+  useEffect(() => {
+    setImgIndex(0);
+  }, [passaro]);
+
   if (!passaro) return null;
 
-  const pai = passaro.pai ? passaroService.getById(passaro.pai) : null;
-  const mae = passaro.mae ? passaroService.getById(passaro.mae) : null;
-
-  const Section = ({ icon: Icon, title, children }: { icon: any; title: string; children: React.ReactNode }) => (
+  const Section = ({
+    icon: Icon,
+    title,
+    children,
+  }: {
+    icon: any;
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <div className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <Icon className="w-4 h-4 text-primary" />
@@ -34,25 +43,59 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
     </div>
   );
 
+  const imagens = Array.isArray(passaro.imagens) ? passaro.imagens : [];
+  const vacinas = Array.isArray(passaro.vacinas) ? passaro.vacinas : [];
+  const historico = Array.isArray((passaro as any).historico) ? (passaro as any).historico : [];
+
+  const imagemAtual =
+    imagens.length > 0
+      ? imagens[Math.min(imgIndex, imagens.length - 1)]
+      : null;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden">
-        {/* Image gallery */}
         <div className="relative aspect-video bg-muted">
-          {passaro.imagens.length > 0 ? (
+          {imagens.length > 0 && imagemAtual ? (
             <>
-              <img src={passaro.imagens[imgIndex]} alt={passaro.nome} className="w-full h-full object-cover" />
-              {passaro.imagens.length > 1 && (
+              <img
+                src={imagemAtual}
+                alt={passaro.nome}
+                className="w-full h-full object-cover"
+              />
+
+              {imagens.length > 1 && (
                 <>
-                  <Button size="icon" variant="ghost" className="absolute left-1 top-1/2 -translate-y-1/2 bg-background/60" onClick={() => setImgIndex((i) => (i - 1 + passaro.imagens.length) % passaro.imagens.length)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute left-1 top-1/2 -translate-y-1/2 bg-background/60"
+                    onClick={() =>
+                      setImgIndex((i) => (i - 1 + imagens.length) % imagens.length)
+                    }
+                  >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 bg-background/60" onClick={() => setImgIndex((i) => (i + 1) % passaro.imagens.length)}>
+
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 bg-background/60"
+                    onClick={() =>
+                      setImgIndex((i) => (i + 1) % imagens.length)
+                    }
+                  >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
+
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                    {passaro.imagens.map((_, i) => (
-                      <div key={i} className={`w-2 h-2 rounded-full ${i === imgIndex ? "bg-primary" : "bg-background/60"}`} />
+                    {imagens.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full ${
+                          i === imgIndex ? "bg-primary" : "bg-background/60"
+                        }`}
+                      />
                     ))}
                   </div>
                 </>
@@ -70,11 +113,20 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
             <DialogHeader>
               <DialogTitle className="font-heading text-xl flex items-center gap-2">
                 {passaro.nome}
-                <Badge className="bg-primary text-primary-foreground">{passaro.tipo}</Badge>
+                <Badge className="bg-primary text-primary-foreground">
+                  {passaro.tipo}
+                </Badge>
               </DialogTitle>
+
               <div className="flex gap-3 text-xs text-muted-foreground">
-                <span>Anilha: <strong>{passaro.anilha}</strong></span>
-                {passaro.cor && <span>Cor: <strong>{passaro.cor}</strong></span>}
+                <span>
+                  Anilha: <strong>{passaro.anilha}</strong>
+                </span>
+                {passaro.cor && (
+                  <span>
+                    Cor: <strong>{passaro.cor}</strong>
+                  </span>
+                )}
               </div>
             </DialogHeader>
 
@@ -90,13 +142,15 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
               <GenealogyTree passaro={passaro} />
             </Section>
 
-            {passaro.vacinas.length > 0 && (
+            {vacinas.length > 0 && (
               <Section icon={Syringe} title="Vacinas">
                 <ul className="space-y-1">
-                  {passaro.vacinas.map((v, i) => (
+                  {vacinas.map((v, i) => (
                     <li key={i} className="flex justify-between">
                       <span>{v.nome}</span>
-                      <span className="text-xs">{new Date(v.data).toLocaleDateString("pt-BR")}</span>
+                      <span className="text-xs">
+                        {v.data ? new Date(v.data).toLocaleDateString("pt-BR") : ""}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -121,15 +175,21 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
               </Section>
             )}
 
-            {passaro.historico.length > 0 && (
+            {historico.length > 0 && (
               <Section icon={Clock} title="Histórico">
                 <ul className="space-y-1">
-                  {passaro.historico.slice().reverse().slice(0, 5).map((h, i) => (
-                    <li key={i} className="text-xs">
-                      <span className="text-muted-foreground">{new Date(h.data).toLocaleDateString("pt-BR")}</span>{" "}
-                      {h.descricao}
-                    </li>
-                  ))}
+                  {historico
+                    .slice()
+                    .reverse()
+                    .slice(0, 5)
+                    .map((h: any, i: number) => (
+                      <li key={i} className="text-xs">
+                        <span className="text-muted-foreground">
+                          {h.data ? new Date(h.data).toLocaleDateString("pt-BR") : ""}
+                        </span>{" "}
+                        {h.descricao}
+                      </li>
+                    ))}
                 </ul>
               </Section>
             )}
