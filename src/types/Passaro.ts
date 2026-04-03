@@ -1,30 +1,46 @@
+export type PassaroTipo = "Curió" | "Canário";
+
 export interface Vacina {
   nome: string;
-  data: string; // ISO date string
+  data: string;
 }
 
 export interface HistoricoEntry {
-  data: string; // ISO date string
+  data: string;
   descricao: string;
 }
 
 export interface Passaro {
-  id: string; // same as anilha
+  id: string;
   nome: string;
-  tipo: "Curió" | "Canário";
+  tipo: PassaroTipo;
   anilha: string;
   cor: string;
-  pai: string; // anilha reference or free text
+  pai: string;
   mae: string;
   dataNascimento: string;
   vacinas: Vacina[];
   alimentacao: string;
-  imagens: string[]; // base64 data URLs
-  audio: string; // base64 data URL
+  imagens: string[];
+  audio: string;
   observacoes: string;
   historico: HistoricoEntry[];
   criadoEm: string;
   atualizadoEm: string;
+}
+
+export interface PassaroStats {
+  total: number;
+  curios: number;
+  canarios: number;
+  nascidosAnoAtual: number;
+  porTipo: Record<string, number>;
+}
+
+export interface AlertaPassaro {
+  tipo: "vacina" | "dados";
+  mensagem: string;
+  passaroId: string;
 }
 
 export type PassaroFormData = Omit<Passaro, "id" | "criadoEm" | "atualizadoEm" | "historico">;

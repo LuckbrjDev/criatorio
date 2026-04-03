@@ -1,4 +1,4 @@
-import { Passaro } from "@/types/Passaro";
+import { Passaro } from "@/types/passaro";
 import { Bird } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 

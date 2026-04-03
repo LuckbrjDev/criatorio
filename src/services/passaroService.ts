@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import { PassaroFormData } from "@/types/Passaro";
+import { AlertaPassaro, Passaro, PassaroFormData, PassaroStats } from "@/types/passaro";
 
 export const passaroService = {
   async getAll() {
