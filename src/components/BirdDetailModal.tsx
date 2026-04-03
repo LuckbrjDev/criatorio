@@ -153,7 +153,9 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
 
             {/*<Section icon={GitBranch} title="Genealogia">
               <GenealogyTree passaro={passaro} />
-            </Section>*/}</ScrollArea>
+            </Section>*/}
+          </div>
+        </ScrollArea>
 
             {vacinas.length > 0 && (
               <Section icon={Syringe} title="Vacinas">
