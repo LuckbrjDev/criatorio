@@ -1,5 +1,4 @@
 import { Passaro } from "@/types/Passaro";
-import { passaroService } from "@/services/passaroService";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { GenealogyTree } from "@/components/GenealogyTree";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +15,9 @@ import {
   GitBranch,
   Clock,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface BirdDetailModalProps {
   passaro: Passaro | null;
@@ -29,14 +28,15 @@ interface BirdDetailModalProps {
 export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps) {
   const [imgIndex, setImgIndex] = useState(0);
 
+  useEffect(() => {
+    setImgIndex(0);
+  }, [passaro]);
+
   if (!passaro) return null;
 
   const imagens = Array.isArray(passaro.imagens) ? passaro.imagens : [];
   const vacinas = Array.isArray(passaro.vacinas) ? passaro.vacinas : [];
-  const historico = Array.isArray(passaro.historico) ? passaro.historico : [];
-
-  const pai = passaro.pai ? passaroService.getById(passaro.pai) : null;
-  const mae = passaro.mae ? passaroService.getById(passaro.mae) : null;
+  const historico = Array.isArray((passaro as any).historico) ? (passaro as any).historico : [];
 
   const Section = ({
     icon: Icon,
@@ -59,8 +59,6 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden">
-
-        {/* GALERIA */}
         <div className="relative aspect-video bg-muted">
           {imagens.length > 0 ? (
             <>
@@ -77,9 +75,7 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                     variant="ghost"
                     className="absolute left-1 top-1/2 -translate-y-1/2 bg-background/60"
                     onClick={() =>
-                      setImgIndex(
-                        (i) => (i - 1 + imagens.length) % imagens.length
-                      )
+                      setImgIndex((i) => (i - 1 + imagens.length) % imagens.length)
                     }
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -90,9 +86,7 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                     variant="ghost"
                     className="absolute right-1 top-1/2 -translate-y-1/2 bg-background/60"
                     onClick={() =>
-                      setImgIndex(
-                        (i) => (i + 1) % imagens.length
-                      )
+                      setImgIndex((i) => (i + 1) % imagens.length)
                     }
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -103,9 +97,7 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                       <div
                         key={i}
                         className={`w-2 h-2 rounded-full ${
-                          i === imgIndex
-                            ? "bg-primary"
-                            : "bg-background/60"
+                          i === imgIndex ? "bg-primary" : "bg-background/60"
                         }`}
                       />
                     ))}
@@ -134,7 +126,6 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                 <span>
                   Anilha: <strong>{passaro.anilha}</strong>
                 </span>
-
                 {passaro.cor && (
                   <span>
                     Cor: <strong>{passaro.cor}</strong>
