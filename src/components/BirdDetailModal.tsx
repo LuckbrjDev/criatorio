@@ -7,8 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Bird, Calendar, Utensils, Syringe, FileText, GitBranch, Clock, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import {
+  Bird,
+  Calendar,
+  Utensils,
+  Syringe,
+  FileText,
+  GitBranch,
+  Clock,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import { useState } from "react";
 
 interface BirdDetailModalProps {
   passaro: Passaro | null;
@@ -19,11 +29,14 @@ interface BirdDetailModalProps {
 export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps) {
   const [imgIndex, setImgIndex] = useState(0);
 
-  useEffect(() => {
-    setImgIndex(0);
-  }, [passaro]);
-
   if (!passaro) return null;
+
+  const imagens = Array.isArray(passaro.imagens) ? passaro.imagens : [];
+  const vacinas = Array.isArray(passaro.vacinas) ? passaro.vacinas : [];
+  const historico = Array.isArray(passaro.historico) ? passaro.historico : [];
+
+  const pai = passaro.pai ? passaroService.getById(passaro.pai) : null;
+  const mae = passaro.mae ? passaroService.getById(passaro.mae) : null;
 
   const Section = ({
     icon: Icon,
@@ -43,23 +56,16 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
     </div>
   );
 
-  const imagens = Array.isArray(passaro.imagens) ? passaro.imagens : [];
-  const vacinas = Array.isArray(passaro.vacinas) ? passaro.vacinas : [];
-  const historico = Array.isArray((passaro as any).historico) ? (passaro as any).historico : [];
-
-  const imagemAtual =
-    imagens.length > 0
-      ? imagens[Math.min(imgIndex, imagens.length - 1)]
-      : null;
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] p-0 overflow-hidden">
+
+        {/* GALERIA */}
         <div className="relative aspect-video bg-muted">
-          {imagens.length > 0 && imagemAtual ? (
+          {imagens.length > 0 ? (
             <>
               <img
-                src={imagemAtual}
+                src={imagens[imgIndex]}
                 alt={passaro.nome}
                 className="w-full h-full object-cover"
               />
@@ -71,7 +77,9 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                     variant="ghost"
                     className="absolute left-1 top-1/2 -translate-y-1/2 bg-background/60"
                     onClick={() =>
-                      setImgIndex((i) => (i - 1 + imagens.length) % imagens.length)
+                      setImgIndex(
+                        (i) => (i - 1 + imagens.length) % imagens.length
+                      )
                     }
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -82,7 +90,9 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                     variant="ghost"
                     className="absolute right-1 top-1/2 -translate-y-1/2 bg-background/60"
                     onClick={() =>
-                      setImgIndex((i) => (i + 1) % imagens.length)
+                      setImgIndex(
+                        (i) => (i + 1) % imagens.length
+                      )
                     }
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -93,7 +103,9 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                       <div
                         key={i}
                         className={`w-2 h-2 rounded-full ${
-                          i === imgIndex ? "bg-primary" : "bg-background/60"
+                          i === imgIndex
+                            ? "bg-primary"
+                            : "bg-background/60"
                         }`}
                       />
                     ))}
@@ -122,6 +134,7 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                 <span>
                   Anilha: <strong>{passaro.anilha}</strong>
                 </span>
+
                 {passaro.cor && (
                   <span>
                     Cor: <strong>{passaro.cor}</strong>
@@ -149,7 +162,7 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                     <li key={i} className="flex justify-between">
                       <span>{v.nome}</span>
                       <span className="text-xs">
-                        {v.data ? new Date(v.data).toLocaleDateString("pt-BR") : ""}
+                        {new Date(v.data).toLocaleDateString("pt-BR")}
                       </span>
                     </li>
                   ))}
@@ -182,10 +195,10 @@ export function BirdDetailModal({ passaro, open, onClose }: BirdDetailModalProps
                     .slice()
                     .reverse()
                     .slice(0, 5)
-                    .map((h: any, i: number) => (
+                    .map((h, i) => (
                       <li key={i} className="text-xs">
                         <span className="text-muted-foreground">
-                          {h.data ? new Date(h.data).toLocaleDateString("pt-BR") : ""}
+                          {new Date(h.data).toLocaleDateString("pt-BR")}
                         </span>{" "}
                         {h.descricao}
                       </li>
