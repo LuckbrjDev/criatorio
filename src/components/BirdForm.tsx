@@ -16,6 +16,14 @@ import { ptBR } from "date-fns/locale";
 import { CalendarIcon, Plus, Trash2, Upload, X, Save, Bird } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const Field = ({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) => (
+  <div className="space-y-1.5">
+    <Label className="text-sm font-medium">{label}</Label>
+    {children}
+    {error && <p className="text-xs text-destructive">{error}</p>}
+  </div>
+);
+
 interface BirdFormProps {
   editingBird: Passaro | null;
   onSave: () => void;
@@ -157,15 +165,8 @@ export function BirdForm({ editingBird, onSave, onClear }: BirdFormProps) {
     setForm((f) => ({ ...f, vacinas: f.vacinas.filter((_, i) => i !== index) }));
   };
 
-  const Field = ({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) => (
-    <div className="space-y-1.5">
-      <Label className="text-sm font-medium">{label}</Label>
-      {children}
-      {error && <p className="text-xs text-destructive">{error}</p>}
-    </div>
-  );
-
   return (
+
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-5 pr-4 pb-6">
         <div className="flex items-center justify-between">

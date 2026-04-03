@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Passaro } from "@/types/Passaro";
 import { usePassaros } from "@/hooks/usePassaros";
 import { passaroService } from "@/services/passaroService";
@@ -18,15 +18,22 @@ import heroBirds from "@/assets/hero-birds.jpg";
 
 const Index = () => {
   const { passaros, refresh, buscar, searchQuery, stats, alertas } = usePassaros();
+
+  const [birdsList, setBirdsList] = useState<Passaro[]>([]);
   const [selectedBird, setSelectedBird] = useState<Passaro | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [editingBird, setEditingBird] = useState<Passaro | null>(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [filters, setFilters] = useState<Filters>({ tipo: "", cor: "", anoNascimento: "" });
 
+  // 🔥 CORREÇÃO: controlar lista via estado
+  useEffect(() => {
+    setBirdsList(passaroService.getAll());
+  }, [passaros]);
+
+  // 🔥 CORREÇÃO: usar passaros ao invés de getAll direto
   const cores = useMemo(() => {
-    const all = passaroService.getAll();
-    return [...new Set(all.map((p) => p.cor).filter(Boolean))];
+    return [...new Set(passaros.map((p) => p.cor).filter(Boolean))];
   }, [passaros]);
 
   const filteredPassaros = useMemo(() => {
@@ -57,6 +64,8 @@ const Index = () => {
     refresh();
     setEditingBird(null);
   };
+
+  const handleClear = () => setEditingBird(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,22 +129,30 @@ const Index = () => {
             {stats.total >= 2 && <CrossingControl />}
           </TabsContent>
 
-          <TabsContent value="cadastro" className="animate-fade-in">
+          <TabsContent value="cadastro" forceMount className="animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 bg-card rounded-xl border p-5">
-                <BirdForm editingBird={editingBird} onSave={handleSave} onClear={() => setEditingBird(null)} />
+                <BirdForm editingBird={editingBird} onSave={handleSave} onClear={handleClear} />
               </div>
+
               <div className="space-y-3">
-                <h3 className="font-heading font-semibold text-sm text-muted-foreground">Pássaros Cadastrados</h3>
+                <h3 className="font-heading font-semibold text-sm text-muted-foreground">
+                  Pássaros Cadastrados
+                </h3>
+
                 <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                  {passaroService.getAll().map((p) => (
+                  {birdsList.map((p) => (
                     <div
                       key={p.id}
-                      className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted ${editingBird?.id === p.id ? "border-primary bg-primary/5" : ""}`}
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors hover:bg-muted ${
+                        editingBird?.id === p.id ? "border-primary bg-primary/5" : ""
+                      }`}
                       onClick={() => setEditingBird(p)}
                     >
                       <p className="font-medium text-sm">{p.nome}</p>
-                      <p className="text-xs text-muted-foreground">{p.tipo} • {p.anilha}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {p.tipo} • {p.anilha}
+                      </p>
                     </div>
                   ))}
                 </div>
